@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Dashboard with CRUD</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    
+</head>
+<body>
+
+    <header>
+        <div class="user-info">
+            <img src="profile.jpeg" alt="User Image">
+            <p>User Name</p>
+        </div>
+    </header>
+
+    
+    <!-- Sidebar -->
+    <div id="sidebar" class="closed">
+        <button class="open-btn" onclick="toggleSidebar()">☰ Open Sidebar</button>
+        <ul>
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#">Profile</a></li>
+            <li><a href="#">Settings</a></li>
+            <!-- Add more links as needed -->
+            <li><a href="#">Help</a></li>
+            <li><a href="#">Logout</a></li>
+        </ul>
+    </div>
+    <div class="container">
+        <!-- Sidebar -->
+        
+
+        <!-- Dashboard -->
+        <div class="dashboard" id="dashboard">
+            <!-- Image cards will be dynamically added here -->
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2>Edit Card</h2>
+            <form id="editForm">
+                <label for="cardContent">Card Content:</label>
+                <textarea id="cardContent" rows="4" required></textarea>
+                <button type="button" onclick="saveChanges()">Save Changes</button>
+                <button type="button" onclick="closeModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <button class="add-card-button" onclick="addImageCard()">Add Image Card</button>
+
+    <script>
+        let cardCounter = 1; // Counter for generating unique card IDs
+
+        // Function to initialize the dashboard with a specified number of image cards
+        async function initializeDashboard(numCards) {
+            const dashboard = document.getElementById("dashboard");
+        
+            try {
+                // Fetch data from the Lorem Picsum API with a timestamp to prevent caching
+                const response = await fetch(`https://picsum.photos/v2/list?page=1&limit=${numCards}&timestamp=${Date.now()}`);
+                const data = await response.json();
+        
+                // Iterate through the API data and create image cards
+                data.forEach(cardData => {
+                    const card = createImageCardElement(cardData);
+                    dashboard.appendChild(card);
+                });
+            } catch (error) {
+                console.error("Error fetching data from the Lorem Picsum API:", error);
+            }
+        }
+        
+
+        // Function to create an image card element
+        function createImageCardElement(cardData) {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.dataset.id = cardCounter++; // Set a unique data attribute for the card's ID
+            card.innerHTML = `
+                <img src="${cardData.download_url}" alt="Card Image">
+                <p>${cardData.author}</p>
+                <button onclick="deleteCard(${card.dataset.id})">Delete</button>
+            `;
+            return card;
+        }
+
+        // Function to add a new image card using the Lorem Picsum API
+        async function addImageCard() {
+            try {
+                // Fetch a random image from the Lorem Picsum API with a timestamp to prevent caching
+                const response = await fetch(`https://picsum.photos/v2/list?page=1&limit=1&timestamp=${Date.now()}`);
+                const newCardData = (await response.json())[0];
+        
+                // Ensure the new card is not a duplicate
+                const dashboard = document.getElementById("dashboard");
+                const existingCardIds = Array.from(dashboard.querySelectorAll('.card')).map(card => card.dataset.id);
+        
+                if (!existingCardIds.includes(newCardData.id.toString())) {
+                    // Create and append the new card to the dashboard
+                    const newCardElement = createImageCardElement(newCardData);
+                    dashboard.appendChild(newCardElement);
+                } else {
+                    console.warn("Duplicate image detected. Fetching a new image.");
+                    // Fetch a new image if a duplicate is detected
+                    addImageCard();
+                }
+            } catch (error) {
+                console.error("Error adding new image card:", error);
+            }
+        }
+        
+
+        // Function to delete an image card using the Lorem Picsum API
+        async function deleteCard(cardId) {
+            try {
+                // Note: Since the Lorem Picsum API doesn't support deletion, this is a placeholder
+                // In a real-world scenario, you would send a DELETE request to your API
+
+                // Remove the card from the dashboard
+                const dashboard = document.getElementById("dashboard");
+                const cardToRemove = dashboard.querySelector(`.card[data-id="${cardId}"]`);
+                dashboard.removeChild(cardToRemove);
+            } catch (error) {
+                console.error("Error deleting image card:", error);
+            }
+        }
+
+        // Function to close the edit modal
+        function closeModal() {
+            const modal = document.getElementById("modal");
+            modal.style.display = "none";
+        }
+
+        // Function to toggle the sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const openBtn = document.getElementById("openBtn");
+            const ulElements = sidebar.querySelectorAll("ul");
+
+            sidebar.classList.toggle("closed");
+
+            // Toggle the visibility of ul elements
+            ulElements.forEach(ul => {
+                ul.style.opacity = sidebar.classList.contains("closed") ? 0 : 1;
+            });
+
+            // Hide open button and show after sidebar is closed
+            openBtn.style.opacity = sidebar.classList.contains("closed") ? 1 : 0;
+        }
+
+        // Initialize the dashboard with 2 image cards when the page loads
+        initializeDashboard(2);
+    </script>
+
+</body>
+</html>
